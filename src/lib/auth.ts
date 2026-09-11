@@ -74,7 +74,7 @@ export async function getSession(
 ): Promise<User | null> {
   if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;
   const result = await pool.query<User>(
-    `SELECT u.id,u.username,u.display_name FROM sessions s JOIN users u ON u.id=s.user_id
+    `SELECT u.id,u.username,u.display_name,u.role FROM sessions s JOIN users u ON u.id=s.user_id
     WHERE s.token_hash=$1 AND s.expires_at > now() AND u.active=true`,
     [tokenHash(token)],
   );

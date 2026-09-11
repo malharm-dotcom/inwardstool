@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import { pool, transaction } from "./db";
+import { resolveScan } from "./mappings";
 import { HttpError, quantity, skuCode, text, uuid } from "./validation";
 import type {
   AdjustmentInput,
@@ -123,12 +124,24 @@ export async function scanReceipt(
   input: ScanInput,
   userId: string,
 ): Promise<void> {
-  const sku = skuCode(input.sku),
+  const scannedCode = skuCode(input.sku),
     shelfCode = skuCode(input.shelfCode, "Shelf code");
   if (!["SCANNER", "CAMERA", "MANUAL"].includes(input.source))
     throw new HttpError(400, "Invalid scan source.");
   await transaction(async (client) => {
     const receipt = await lockReceipt(client, id);
+    const previous = (
+      await client.query(
+        "SELECT scanned_code,sku FROM receipt_events WHERE request_id=$1",
+        [uuid(input.requestId)],
+      )
+    ).rows[0];
+    if (previous && previous.scanned_code !== scannedCode)
+      throw new HttpError(
+        409,
+        "Request ID conflict. This request was already used for another change.",
+      );
+    const sku = previous?.sku ?? (await resolveScan(client, scannedCode));
     if (
       await previousRequest(
         client,
@@ -157,9 +170,18 @@ export async function scanReceipt(
       [id, sku, shelfCode, next],
     );
     await client.query(
-      `INSERT INTO receipt_events(request_id,receipt_id,sku,shelf_code,kind,source,delta,quantity_after,user_id,created_at)
-      VALUES ($1,$2,$3,$4,'SCAN',$5,1,$6,$7,clock_timestamp())`,
-      [input.requestId, id, sku, shelfCode, input.source, next, userId],
+      `INSERT INTO receipt_events(request_id,receipt_id,sku,shelf_code,kind,source,delta,quantity_after,user_id,scanned_code,created_at)
+      VALUES ($1,$2,$3,$4,'SCAN',$5,1,$6,$7,$8,clock_timestamp())`,
+      [
+        input.requestId,
+        id,
+        sku,
+        shelfCode,
+        input.source,
+        next,
+        userId,
+        scannedCode,
+      ],
     );
     await client.query(
       "UPDATE receipts SET updated_at=clock_timestamp() WHERE id=$1",

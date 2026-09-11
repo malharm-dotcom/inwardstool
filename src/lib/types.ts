@@ -1,4 +1,9 @@
-export type User = { id: string; username: string; display_name: string };
+export type User = {
+  id: string;
+  username: string;
+  display_name: string;
+  role: "ADMIN" | "STAFF";
+};
 export type Receipt = {
   id: string;
   reference: string;
@@ -18,6 +23,7 @@ export type Line = {
   updated_at: string;
 };
 export type ReceiptEvent = {
+  scanned_code: string | null;
   request_id: string;
   sku: string | null;
   shelf_code: string | null;

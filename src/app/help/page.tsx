@@ -19,6 +19,20 @@ export default async function HelpPage() {
       </div>
       <div className="help-grid">
         <article className="panel prose">
+          <h2>EAN mappings & staff access</h2>
+          <p>
+            An administrator can open <strong>Admin</strong> to create staff
+            accounts and import the SKU–EAN CSV template. Staff can receive and
+            finalize shipments but cannot manage users or mappings.
+          </p>
+          <p>
+            Scan an EAN to count its mapped SKU. Direct SKU tags still work.
+            Unknown numeric barcodes remain pending: ask an administrator to
+            import the mapping, then select <strong>Retry pending scans</strong>
+            . The export always uses the saved SKU.
+          </p>
+        </article>
+        <article className="panel prose">
           <Icon name="scan" size={30} />
           <h2>Handheld & USB scanners</h2>
           <ol>

@@ -2023,3 +2023,59 @@ main {
     padding: 8px 10px;
   }
 }
+.admin-panel {
+  background: white;
+  border: 1px solid #dce5df;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.admin-panel h2 {
+  margin-bottom: 8px;
+}
+.admin-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+  margin: 22px 0;
+}
+.admin-form label {
+  display: grid;
+  gap: 8px;
+  flex: 1 1 200px;
+  font-size: 14px;
+}
+.admin-form input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #cdd9d2;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.admin-table {
+  overflow-x: auto;
+}
+.admin-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.admin-table th,
+.admin-table td {
+  text-align: left;
+  padding: 14px 12px;
+  border-bottom: 1px solid #e4eae6;
+}
+.admin-table th {
+  font-size: 12px;
+  color: #60736b;
+}
+.admin-message {
+  padding: 16px;
+  background: #eaf5ec;
+  border-radius: 10px;
+}
+.admin-message.error {
+  background: #fff0eb;
+  color: #a53a24;
+}

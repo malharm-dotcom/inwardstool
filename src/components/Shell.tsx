@@ -32,7 +32,11 @@ export default function Shell({
         <nav aria-label="Main navigation">
           <Link
             href="/"
-            className={path !== "/help" ? "nav-item active" : "nav-item"}
+            className={
+              path !== "/help" && path !== "/admin"
+                ? "nav-item active"
+                : "nav-item"
+            }
           >
             <Icon name="box" />
             Receiving
@@ -45,6 +49,15 @@ export default function Shell({
             <Icon name="help" />
             Scanner guide
           </Link>
+          {user.role === "ADMIN" && (
+            <Link
+              href="/admin"
+              className={path === "/admin" ? "nav-item active" : "nav-item"}
+            >
+              <Icon name="box" />
+              Admin
+            </Link>
+          )}
         </nav>
         <div className="sidebar-note">
           <span className="live-dot" /> Built for the receiving floor

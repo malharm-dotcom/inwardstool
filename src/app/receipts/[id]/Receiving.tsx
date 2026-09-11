@@ -365,7 +365,7 @@ export default function Receiving({
               <div className="scanner-title">
                 <span>
                   <Icon name="scan" size={20} />
-                  <strong>Scan SKU tags</strong>
+                  <strong>Scan EAN or SKU tags</strong>
                 </span>
                 <span
                   className={`scanner-state ${focused && ready ? "is-ready" : ""}`}
@@ -468,7 +468,7 @@ export default function Receiving({
                 }}
               >
                 <label htmlFor="sku-input" className="sr-only">
-                  Scan SKU barcode
+                  Scan EAN or SKU barcode
                 </label>
                 <div className="scan-input-wrap">
                   <Icon name="scan" size={27} />
@@ -519,7 +519,7 @@ export default function Receiving({
                       finalize ||
                       busy
                     }
-                    aria-label="Add scanned SKU"
+                    aria-label="Add scanned barcode"
                   >
                     <Icon name="arrow" size={22} />
                   </button>
@@ -615,7 +615,14 @@ export default function Receiving({
                       <tr
                         key={`${line.sku}:${line.shelf_code}`}
                         className={
-                          line.sku === lastScan && line.shelf_code === lastShelf
+                          (line.sku === lastScan ||
+                            receipt.events.some(
+                              (event) =>
+                                event.kind === "SCAN" &&
+                                event.scanned_code === lastScan &&
+                                event.sku === line.sku,
+                            )) &&
+                          line.shelf_code === lastShelf
                             ? "last-scanned-row"
                             : ""
                         }
@@ -758,6 +765,12 @@ export default function Receiving({
                             : `${event.delta > 0 ? "+" : ""}${event.delta} unit scanned`}
                       </strong>
                       {event.sku && <span className="mono">{event.sku}</span>}
+                      {event.scanned_code &&
+                        event.scanned_code !== event.sku && (
+                          <span className="small muted">
+                            EAN: {event.scanned_code}
+                          </span>
+                        )}
                       {event.shelf_code && (
                         <span className="mono">→ {event.shelf_code}</span>
                       )}

@@ -1,6 +1,6 @@
 # Inwards Tool
 
-Next.js + PostgreSQL receiving workspace for direct SKU scanning. Handheld and USB keyboard scanners are the primary input. Each completed scan adds one piece; repeated SKU codes accumulate on the same SKU + shelf line. No product master or expected purchase order is needed.
+Next.js + PostgreSQL receiving workspace for EAN and direct SKU scanning. Handheld and USB keyboard scanners are the primary input. Each completed scan adds one piece; repeated codes accumulate on the same resolved SKU + shelf line. Admins upload SKU–EAN mappings; no expected purchase order is needed.
 
 ## Local preview on this computer
 
@@ -90,7 +90,17 @@ ADD,4MST2268-03-L,RACK_A01,1
 
 The export is an **ADD** inventory adjustment. Uploading the same file twice may add stock twice in the destination system. Downloading again does not change this tool’s counts or prove an external upload succeeded.
 
-## Checks
+## Admin and EAN mapping
+
+The first existing account becomes Admin on migration 003. New deployments bootstrap an Admin. Other accounts default to Staff. After deployment, refresh the page to see **Admin** in the sidebar.
+
+Admin can create username/password accounts and enable or disable staff access. Disabling revokes existing sessions. Staff can receive, correct, finalize and export shipments, but all admin APIs enforce administrator access. Existing passwords are unchanged.
+
+In **Admin → SKU–EAN mapping**, download the CSV template, replace the sample row with real data and import it. Required headers: `SKU,EAN` (either order). EAN is text of 8–14 digits; preserve leading zeros and avoid Excel scientific notation. Up to 50,000 rows / 5 MB per upload. Repeated identical mappings are skipped; conflicting mappings reject the whole upload without partial changes.
+
+Numeric scans resolve through mappings; unknown numeric codes remain in the pending queue until an administrator imports them and the operator retries. Alphanumeric direct SKUs remain supported. Multiple EANs can point to one SKU. Receipt lines and `Product Code` exports store the resolved SKU. Scan audit records retain the original barcode; replay uses the original request and does not re-resolve mappings. Imports never rewrite prior receipts. Review any EANs scanned before this feature and correct those legacy lines before finalizing.
+
+## Verification
 
 ```sh
 npm run typecheck

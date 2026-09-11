@@ -17,7 +17,10 @@ export async function pageUser() {
   if (!user) redirect("/login");
   return user;
 }
-export async function body(request: Request): Promise<Record<string, unknown>> {
+export async function body(
+  request: Request,
+  maxBytes = 16000,
+): Promise<Record<string, unknown>> {
   const appUrl = process.env.APP_URL;
   if (!appUrl) throw new HttpError(503, "Application URL is not configured.");
   if (request.headers.get("origin") !== new URL(appUrl).origin)
@@ -35,7 +38,7 @@ export async function body(request: Request): Promise<Record<string, unknown>> {
     const { done, value } = await reader.read();
     if (done) break;
     size += value.byteLength;
-    if (size > 16000) {
+    if (size > maxBytes) {
       await reader.cancel();
       throw new HttpError(413, "Request is too large.");
     }

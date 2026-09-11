@@ -20,6 +20,8 @@ const userId = randomUUID(),
   password = randomUUID();
 let receiptId: string | undefined;
 let cookie = "";
+let createdStaffId: string | undefined;
+const mappingEan = "0" + String(Date.now()).slice(-12);
 async function call(
   path: string,
   data?: unknown,
@@ -57,6 +59,58 @@ try {
   assert.match(setCookie, /HttpOnly/i);
   assert.match(setCookie, /SameSite=strict/i);
   cookie = setCookie.split(";")[0];
+  assert.equal((await call("/api/admin/users")).status, 403);
+  assert.equal((await call("/api/admin/mappings")).status, 403);
+  assert.equal(
+    (
+      await call("/api/admin/users", {
+        username: "forbidden",
+        displayName: "Forbidden",
+        password: "password-123456",
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (await call("/api/admin/mappings", { csv: "SKU,EAN\nTEST,0012345678901" }))
+      .status,
+    403,
+  );
+  await pool.query("UPDATE users SET role='ADMIN' WHERE id=$1", [userId]);
+  assert.equal((await call("/admin")).status, 200);
+  const newStaff = await json<{ id: string; role: string }>(
+    "/api/admin/users",
+    {
+      username: `new-${randomUUID()}`,
+      displayName: "New Receiver",
+      password: "test-password-123",
+    },
+  );
+  createdStaffId = newStaff.id;
+  assert.equal(newStaff.role, "STAFF");
+  assert.equal(
+    (
+      await call(
+        "/api/admin/users",
+        { userId: newStaff.id, active: false },
+        "PATCH",
+      )
+    ).status,
+    200,
+  );
+  assert.equal(
+    (await call("/api/admin/users", { userId: userId, active: false }, "PATCH"))
+      .status,
+    400,
+  );
+  assert.equal(
+    (
+      await call("/api/admin/mappings", {
+        csv: `SKU,EAN\n4MST2268-03-L,${mappingEan}`,
+      })
+    ).status,
+    200,
+  );
   assert.equal(
     (
       await call(
@@ -89,8 +143,8 @@ try {
     401,
   );
   assert.equal((await call(path, { ...scan, shelfCode: "" })).status, 400);
-  await json(path, scan);
-  await json(path, scan);
+  await json(path, { ...scan, sku: mappingEan });
+  await json(path, { ...scan, sku: mappingEan });
   await Promise.all(
     Array.from({ length: 4 }, () =>
       json(path, { ...scan, requestId: randomUUID() }),
@@ -162,6 +216,11 @@ try {
     ]);
   }
   await pool.query("DELETE FROM sessions WHERE user_id=$1", [userId]);
+  await pool.query("DELETE FROM barcode_mappings WHERE imported_by=$1", [
+    userId,
+  ]);
+  if (createdStaffId)
+    await pool.query("DELETE FROM users WHERE id=$1", [createdStaffId]);
   await pool.query("DELETE FROM login_attempts WHERE username=$1", [username]);
   await pool.query("DELETE FROM users WHERE id=$1 AND username=$2", [
     userId,

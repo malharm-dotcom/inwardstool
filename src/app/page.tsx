@@ -36,8 +36,8 @@ export default async function Home({
             <br className="mobile-only" /> Clarity follows.
           </h1>
           <p className="muted">
-            Start a receipt, scan your SKU tags, and keep every piece accounted
-            for.
+            Start a receipt, scan your EAN or SKU tags, and keep every piece
+            accounted for.
           </p>
         </div>
         <Link href="/receipts/new" className="button primary">
@@ -185,7 +185,7 @@ export default async function Home({
             <p>
               {params.q || params.status
                 ? "Try another reference, supplier, or status."
-                : "Create your first receipt and start scanning. No product master needed."}
+                : "Create your first receipt and start scanning. Import EAN mappings in Admin before scanning EAN tags."}
             </p>
             <Link
               className="button secondary"

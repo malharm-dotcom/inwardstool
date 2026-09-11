@@ -14,22 +14,28 @@ try {
         return;
       }
     }
-  if (
-    !username ||
-    !/^[a-z0-9._-]{1,80}$/.test(username) ||
-    !name ||
-    name.length > 100 ||
-    !password
-  ) {
-    throw new Error(
-      "Set CREATE_USERNAME (letters/numbers/dots/hyphens/underscores), CREATE_DISPLAY_NAME and CREATE_PASSWORD (12+ characters).",
+    if (
+      !username ||
+      !/^[a-z0-9._-]{1,80}$/.test(username) ||
+      !name ||
+      name.length > 100 ||
+      !password
+    ) {
+      throw new Error(
+        "Set CREATE_USERNAME (letters/numbers/dots/hyphens/underscores), CREATE_DISPLAY_NAME and CREATE_PASSWORD (12+ characters).",
+      );
+    }
+    await client.query(
+      "INSERT INTO users(id,username,display_name,password_hash,role) VALUES ($1,$2,$3,$4,$5)",
+      [
+        randomUUID(),
+        username,
+        name,
+        await hashPassword(password),
+        process.argv.includes("--if-empty") ? "ADMIN" : "STAFF",
+      ],
     );
-  }
-  await client.query(
-    "INSERT INTO users(id,username,display_name,password_hash) VALUES ($1,$2,$3,$4)",
-    [randomUUID(), username, name, await hashPassword(password)],
-  );
-  console.log(`Created staff account: ${username}`);
+    console.log(`Created staff account: ${username}`);
   });
 } finally {
   await pool.end();
