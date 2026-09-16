@@ -85,9 +85,11 @@ export default async function HelpPage() {
           <Icon name="camera" size={30} />
           <h2>Occasional phone scanning</h2>
           <p>
-            Select a destination shelf, then <strong>Use camera</strong> and
-            grant camera permission. The app must use HTTPS (or localhost during
-            development).
+            Select a destination shelf, then <strong>Use camera</strong>, tap{" "}
+            <strong>Enable camera</strong> and grant camera permission. Open
+            directly in Safari or Chrome. If access was blocked earlier, allow
+            Camera in the browser site settings and phone app permissions, then
+            retry. The app must use HTTPS (or localhost during development).
           </p>
           <p>
             Hold one barcode in view. After it counts, move the tag completely

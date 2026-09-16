@@ -215,8 +215,9 @@ export default function Admin() {
         </form>
         <p className="small muted">
           Maximum 50,000 rows / 5 MB. Conflicting mappings reject the entire
-          import. Existing receipts are never changed. After importing a missing
-          barcode, use Retry on the receipt to save its pending scans.
+          import. Existing EAN lines merge into their mapped SKU when a receipt
+          is opened or refreshed, retaining total quantities. After importing a
+          missing barcode, use Retry on the receipt to save its pending scans.
         </p>
         <form
           className="admin-form"

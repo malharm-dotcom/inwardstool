@@ -22,7 +22,7 @@ export default async function Home({
   const stats = (
     await pool.query(`SELECT count(*) FILTER (WHERE status='OPEN')::int AS open,
     count(*) FILTER (WHERE status='FINALIZED')::int AS finalized,
-    (SELECT coalesce(sum(quantity),0)::bigint::text FROM receipt_lines) AS units FROM receipts`)
+    (SELECT coalesce(sum(l.quantity),0)::bigint::text FROM receipt_lines l JOIN receipts r ON r.id=l.receipt_id WHERE r.discarded_at IS NULL) AS units FROM receipts WHERE discarded_at IS NULL`)
   ).rows[0];
   const pageLink = (number: number) =>
     `/?${new URLSearchParams({ q: params.q ?? "", status: params.status ?? "", page: String(number) })}`;
@@ -106,6 +106,7 @@ export default async function Home({
             <option value="">All statuses</option>
             <option value="OPEN">Open</option>
             <option value="FINALIZED">Finalized</option>
+            <option value="DISCARDED">Discarded</option>
           </select>
           <button className="button secondary compact">Filter</button>
           {(params.q || params.status) && (
@@ -155,7 +156,11 @@ export default async function Home({
                         className={`badge ${receipt.status === "OPEN" ? "open" : "finalized"}`}
                       >
                         <span />
-                        {receipt.status === "OPEN" ? "Open" : "Finalized"}
+                        {receipt.status === "OPEN"
+                          ? "Open"
+                          : receipt.status === "DISCARDED"
+                            ? "Discarded"
+                            : "Finalized"}
                       </span>
                     </td>
                     <td>

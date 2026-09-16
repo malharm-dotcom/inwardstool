@@ -196,6 +196,15 @@ try {
     await download.text(),
     "Adjustment Type,Product Code,Shelf Code,Quantity\r\nADD,4MST2268-03-L,FRONT_OFFICE,3\r\nADD,4MST2268-03-L,RACK_A01,1\r\n",
   );
+  assert.equal(
+    (await call(path, { action: "discard", actorId: userId })).status,
+    200,
+  );
+  assert.equal((await call(`${path}/export`)).status, 409);
+  assert.equal(
+    (await call(path, { ...scan, requestId: randomUUID() })).status,
+    409,
+  );
   assert.equal((await call("/api/auth", {}, "DELETE")).status, 200);
   assert.equal((await call(path)).status, 401);
   console.log(

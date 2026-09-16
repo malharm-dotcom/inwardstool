@@ -7,6 +7,8 @@ function cell(value: string | number): string {
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 export function receiptCsv(receipt: ReceiptDetail): string {
+  if (receipt.status === "DISCARDED")
+    throw new HttpError(409, "Discarded receipts cannot be exported.");
   if (receipt.status !== "FINALIZED")
     throw new HttpError(
       409,

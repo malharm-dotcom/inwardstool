@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import dynamic from "next/dynamic";
+import Camera from "@/components/Camera";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
 import Modal from "@/components/Modal";
@@ -8,8 +8,6 @@ import { dateTime, request } from "@/lib/client";
 import { skuCode } from "@/lib/validation";
 import { parseQueue } from "@/lib/scanning";
 import type { Line, ReceiptDetail, ScanInput, User } from "@/lib/types";
-
-const Camera = dynamic(() => import("@/components/Camera"), { ssr: false });
 
 export default function Receiving({
   initial,
@@ -261,7 +259,11 @@ export default function Receiving({
             {receipt.reference}
             <span className={`badge ${open ? "open" : "finalized"}`}>
               <span />
-              {open ? "Open" : "Finalized"}
+              {open
+                ? "Open"
+                : receipt.status === "DISCARDED"
+                  ? "Discarded"
+                  : "Finalized"}
             </span>
           </h1>
           <p className="muted">
@@ -285,11 +287,46 @@ export default function Receiving({
             <Icon name="check" size={18} />
             Finalize receipt
           </button>
-        ) : (
+        ) : receipt.status === "FINALIZED" ? (
           <a className="button primary" href={`${url}/export`}>
             <Icon name="download" size={18} />
             Download CSV
           </a>
+        ) : null}
+        {user.role === "ADMIN" && receipt.status !== "DISCARDED" && (
+          <button
+            className="button secondary"
+            disabled={busy || saving}
+            onClick={async () => {
+              if (
+                !window.confirm(
+                  `Discard delivery ${receipt.reference}? It will be removed from active totals and cannot be scanned or exported. ${pending.length} pending scans on this device will also be discarded. This does not reverse any inventory already uploaded to another system.`,
+                )
+              )
+                return;
+              setBusy(true);
+              setCamera(false);
+              generation.current++;
+              try {
+                setReceipt(
+                  await request<ReceiptDetail>(url, {
+                    action: "discard",
+                    actorId: user.id,
+                  }),
+                );
+                persist([]);
+                setQueueError("");
+                failed.current = false;
+              } catch (error) {
+                setNotice((error as Error).message);
+              } finally {
+                generation.current++;
+                setBusy(false);
+              }
+            }}
+          >
+            Discard delivery
+          </button>
         )}
       </div>
       {fatal && (
@@ -344,7 +381,13 @@ export default function Receiving({
           </div>
         </div>
       )}
-      {!open && (
+      {receipt.status === "DISCARDED" && (
+        <div className="notice" role="status">
+          Delivery discarded. Scanning and CSV export are disabled. History is
+          retained.
+        </div>
+      )}
+      {receipt.status === "FINALIZED" && (
         <div className="notice success">
           <Icon name="lock" size={18} />
           <div>
@@ -725,7 +768,11 @@ export default function Receiving({
             <section className="camera-option">
               <Icon name="camera" size={21} />
               <strong>No scanner nearby?</strong>
-              <p>Use your phone camera for an occasional scan.</p>
+              <p>
+                {!shelf || changingShelf
+                  ? "Select a destination shelf above to enable camera scanning."
+                  : "Use your phone camera for an occasional scan."}
+              </p>
               <button
                 className="button secondary full compact"
                 disabled={

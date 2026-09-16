@@ -113,4 +113,28 @@ test("admin access, atomic mapping import and EAN scans preserve SKU exports and
     receiptCsv(saved),
     `Adjustment Type,Product Code,Shelf Code,Quantity\r\nADD,${sku},RACK_A,2\r\n`,
   );
+  await pool.query(
+    "INSERT INTO receipt_lines(receipt_id,sku,shelf_code,quantity) VALUES ($1,$2,$3,3)",
+    [receipt.id, ean, "RACK_A"],
+  );
+  await importMappings(adminId, [{ sku, ean }]);
+  const merged = await getReceipt(receipt.id);
+  assert.equal(merged.lines.length, 1);
+  assert.equal(merged.lines[0].sku, sku);
+  assert.equal(merged.lines[0].quantity, 5);
+  assert.equal((await getReceipt(receipt.id)).lines[0].quantity, 5);
+  const { discardReceipt, listReceipts } = await import("../src/lib/receipts");
+  await assert.rejects(discardReceipt(receipt.id, staff.id), /admin/i);
+  await discardReceipt(receipt.id, adminId);
+  await discardReceipt(receipt.id, adminId);
+  const discarded = await getReceipt(receipt.id);
+  assert.equal(discarded.status, "DISCARDED");
+  assert.equal((await listReceipts(receipt.reference)).total, 0);
+  assert.equal((await listReceipts(receipt.reference, "DISCARDED")).total, 1);
+  assert.throws(() => receiptCsv(discarded), /discarded/i);
+  await assert.rejects(
+    scanReceipt(receipt.id, { ...input, requestId: randomUUID() }, staff.id),
+    /discarded/i,
+  );
+  await assert.rejects(finalizeReceipt(receipt.id, staff.id), /discarded/i);
 });

@@ -9,7 +9,7 @@ export type Receipt = {
   reference: string;
   supplier: string;
   notes: string;
-  status: "OPEN" | "FINALIZED";
+  status: "OPEN" | "FINALIZED" | "DISCARDED";
   created_at: string;
   updated_at: string;
   finalized_at: string | null;

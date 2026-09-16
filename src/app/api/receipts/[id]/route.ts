@@ -4,6 +4,7 @@ import {
   scanReceipt,
   adjustReceipt,
   finalizeReceipt,
+  discardReceipt,
 } from "@/lib/receipts";
 import { HttpError } from "@/lib/validation";
 import type { ScanInput, AdjustmentInput } from "@/lib/types";
@@ -30,6 +31,7 @@ export async function POST(request: Request, context: Context) {
     else if (input.action === "adjust")
       await adjustReceipt(id, input as unknown as AdjustmentInput, user.id);
     else if (input.action === "finalize") await finalizeReceipt(id, user.id);
+    else if (input.action === "discard") await discardReceipt(id, user.id);
     else throw new HttpError(400, "Unknown receipt action.");
     return Response.json(await getReceipt(id));
   });

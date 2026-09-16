@@ -98,7 +98,15 @@ Admin can create username/password accounts and enable or disable staff access. 
 
 In **Admin → SKU–EAN mapping**, download the CSV template, replace the sample row with real data and import it. Required headers: `SKU,EAN` (either order). EAN is text of 8–14 digits; preserve leading zeros and avoid Excel scientific notation. Up to 50,000 rows / 5 MB per upload. Repeated identical mappings are skipped; conflicting mappings reject the whole upload without partial changes.
 
-Numeric scans resolve through mappings; unknown numeric codes remain in the pending queue until an administrator imports them and the operator retries. Alphanumeric direct SKUs remain supported. Multiple EANs can point to one SKU. Receipt lines and `Product Code` exports store the resolved SKU. Scan audit records retain the original barcode; replay uses the original request and does not re-resolve mappings. Imports never rewrite prior receipts. Review any EANs scanned before this feature and correct those legacy lines before finalizing.
+Numeric scans resolve through mappings; unknown numeric codes remain in the pending queue until an administrator imports them and the operator retries. Alphanumeric direct SKUs remain supported. Multiple EANs can point to one SKU. Receipt lines and `Product Code` exports store the resolved SKU. Scan audit records retain the original barcode; replay uses the original request and does not re-resolve mappings. Opening or refreshing a receipt merges legacy EAN lines into the mapped SKU on the same shelf, preserving quantities. This also fixes CSV downloads of finalized receipts; it does not reverse or reconcile an earlier upload in the destination system.
+
+## Discarding test deliveries
+
+An administrator can open a receipt and choose **Discard delivery**. Confirming excludes it from active lists/totals and blocks scans, corrections, finalization and CSV export. Original records and the administrator/time of discard are retained. Use the **Discarded** filter to view history. Pending scans on the current device are cleared after the server acknowledges discard; other devices cannot save further scans. Delivery references remain reserved. Discard does not reverse inventory already uploaded into another system.
+
+## Mobile camera
+
+Select a shelf, choose **Use camera**, then **Enable camera**. The camera panel scrolls into view on narrow screens, and camera permission is requested directly from the button tap before loading the barcode decoder. Retry is available with specific permission/device error guidance. Android Chrome must have camera access allowed both for the site and in Android app permissions. Open the HTTPS URL directly in the browser. Actual phone permission and hardware behavior must be verified on the device.
 
 ## Verification
 
