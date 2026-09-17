@@ -5,6 +5,7 @@ import {
   adjustReceipt,
   finalizeReceipt,
   discardReceipt,
+  saveClosingRemarks,
 } from "@/lib/receipts";
 import { HttpError } from "@/lib/validation";
 import type { ScanInput, AdjustmentInput } from "@/lib/types";
@@ -32,6 +33,13 @@ export async function POST(request: Request, context: Context) {
       await adjustReceipt(id, input as unknown as AdjustmentInput, user.id);
     else if (input.action === "finalize") await finalizeReceipt(id, user.id);
     else if (input.action === "discard") await discardReceipt(id, user.id);
+    else if (input.action === "remarks")
+      await saveClosingRemarks(
+        id,
+        user.id,
+        input.remarks,
+        input.expectedRemarks,
+      );
     else throw new HttpError(400, "Unknown receipt action.");
     return Response.json(await getReceipt(id));
   });

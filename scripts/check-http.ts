@@ -123,7 +123,8 @@ try {
     403,
   );
   const receipt = await json<{ id: string }>("/api/receipts", {
-    reference: `HTTP-CHECK-${randomUUID()}`,
+    invoiceNumber: `HTTP-CHECK-${randomUUID()}`,
+    poNumber: "HTTP-PO",
     supplier: "Local automated check",
     notes: "",
   });
@@ -182,6 +183,24 @@ try {
     3,
   );
   await json(path, { action: "finalize", actorId: userId });
+  const remarked = await json<ReceiptDetail>(path, {
+    action: "remarks",
+    actorId: userId,
+    remarks: "Received with packaging damage",
+    expectedRemarks: "",
+  });
+  assert.equal(remarked.closing_remarks, "Received with packaging damage");
+  assert.equal(
+    (
+      await call(path, {
+        action: "remarks",
+        actorId: userId,
+        remarks: "stale edit",
+        expectedRemarks: "",
+      })
+    ).status,
+    409,
+  );
   assert.equal(
     (await call(path, { ...scan, requestId: randomUUID() })).status,
     409,

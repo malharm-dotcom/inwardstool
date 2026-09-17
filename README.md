@@ -110,6 +110,8 @@ Select a shelf, choose **Use camera**, then **Enable camera**. The camera panel 
 
 ## Verification
 
+New receipts require **PO Number** and **Invoice Number**. PO numbers may repeat; invoice numbers are unique across all receipts, including discarded ones. Existing references are retained as invoice numbers with an empty historical PO. Search supports PO, invoice and supplier. After finalizing, use **Receipt remarks** to save receiving observations; edits are audited and concurrent stale changes rejected. Remarks do not alter quantities or the four-column inventory CSV.
+
 ```sh
 npm run typecheck
 npm test

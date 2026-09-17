@@ -173,7 +173,7 @@ test("receiving preserves piece counts through retries, concurrency, correction 
       { reference: receipt.reference, supplier: "", notes: "" },
       userId,
     ),
-    /reference/i,
+    /invoice/i,
   );
 });
 
@@ -193,4 +193,54 @@ test("password verification and database sessions reject wrong credentials", asy
   const token = await signIn(username, "correct-password");
   assert.equal((await getSession(token))?.username, username);
   assert.equal(await getSession("invalid"), null);
+});
+
+test("PO numbers repeat, invoice numbers remain unique and closing remarks do not change stock", async () => {
+  const { saveClosingRemarks } = await import("../src/lib/receipts");
+  const id = randomUUID();
+  await pool.query(
+    "INSERT INTO users(id,username,display_name,password_hash) VALUES ($1,$2,'Test','unused')",
+    [id, `po-${id}`],
+  );
+  const details = {
+    reference: `INV-${randomUUID()}`,
+    poNumber: "REPEATED-PO",
+    supplier: "",
+    notes: "",
+  };
+  const first = await createReceipt(details, id);
+  const second = await createReceipt(
+    { ...details, reference: `INV-${randomUUID()}` },
+    id,
+  );
+  assert.equal(first.po_number, second.po_number);
+  await assert.rejects(
+    createReceipt({ ...details, poNumber: "ANOTHER-PO" }, id),
+    /invoice/i,
+  );
+  await assert.rejects(
+    saveClosingRemarks(first.id, id, "Before closing", ""),
+    /close/i,
+  );
+  await scanReceipt(
+    first.id,
+    {
+      requestId: randomUUID(),
+      sku: "SKU-REMARKS",
+      shelfCode: "RACK_A",
+      source: "SCANNER",
+    },
+    id,
+  );
+  await finalizeReceipt(first.id, id);
+  const before = receiptCsv(await getReceipt(first.id));
+  await saveClosingRemarks(first.id, id, "Received in good condition", "");
+  await assert.rejects(
+    saveClosingRemarks(first.id, id, "Stale change", ""),
+    /changed/i,
+  );
+  const saved = await getReceipt(first.id);
+  assert.equal(saved.closing_remarks, "Received in good condition");
+  assert.equal(saved.events[0].kind, "REMARK");
+  assert.equal(receiptCsv(saved), before);
 });

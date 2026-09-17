@@ -52,16 +52,27 @@ export default function NewReceipt() {
             }}
           >
             <label>
-              Delivery reference <span className="required">*</span>
+              PO Number <span className="required">*</span>
               <input
-                name="reference"
+                name="poNumber"
+                required
                 autoFocus
+                maxLength={100}
+                placeholder="e.g. PO-2026-001"
+              />
+              <small>The same PO can be used for multiple invoices.</small>
+            </label>
+            <label>
+              Invoice Number <span className="required">*</span>
+              <input
+                name="invoiceNumber"
                 required
                 maxLength={100}
-                placeholder="e.g. DC-2026-001"
+                placeholder="e.g. INV-2026-001"
               />
               <small>
-                A unique delivery challan, invoice, or receiving reference.
+                Must be unique across all receipts, including discarded
+                receipts.
               </small>
             </label>
             <label>

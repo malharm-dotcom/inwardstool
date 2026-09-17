@@ -93,7 +93,7 @@ export default async function Home({
             <input
               name="q"
               defaultValue={params.q}
-              placeholder="Search reference or supplier…"
+              placeholder="Search PO, invoice or supplier…"
               aria-label="Search receipts"
               maxLength={100}
             />
@@ -120,7 +120,7 @@ export default async function Home({
             <table>
               <thead>
                 <tr>
-                  <th>DELIVERY REFERENCE</th>
+                  <th>INVOICE / PO NUMBER</th>
                   <th>SUPPLIER</th>
                   <th>RECEIVED</th>
                   <th className="numeric">SKUS</th>
@@ -141,6 +141,9 @@ export default async function Home({
                       >
                         {receipt.reference}
                       </Link>
+                      <small className="muted">
+                        PO: {receipt.po_number || "Not recorded"}
+                      </small>
                       <small>{receipt.created_by_name}</small>
                     </td>
                     <td>{receipt.supplier || "—"}</td>

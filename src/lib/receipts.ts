@@ -18,23 +18,29 @@ const receiptSelect = `SELECT r.*, CASE WHEN r.discarded_at IS NOT NULL THEN 'DI
   FROM receipts r JOIN users u ON u.id=r.created_by LEFT JOIN users f ON f.id=r.finalized_by`;
 
 export async function createReceipt(
-  input: { reference: string; supplier: string; notes: string },
+  input: {
+    reference: string;
+    poNumber?: string;
+    supplier: string;
+    notes: string;
+  },
   userId: string,
 ): Promise<Receipt> {
-  const reference = text(input.reference, "Delivery reference", 100);
+  const reference = text(input.reference, "Invoice number", 100);
+  const poNumber = text(input.poNumber ?? "", "PO number", 100, false);
   const supplier = text(input.supplier ?? "", "Supplier", 200, false);
   const notes = text(input.notes ?? "", "Notes", 2000, false);
   try {
     const result = await pool.query<Receipt>(
-      `INSERT INTO receipts(id,reference,supplier,notes,created_by) VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-      [randomUUID(), reference, supplier, notes, userId],
+      `INSERT INTO receipts(id,reference,supplier,notes,created_by,po_number) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [randomUUID(), reference, supplier, notes, userId, poNumber],
     );
     return result.rows[0];
   } catch (error) {
     if ((error as { code?: string }).code === "23505")
       throw new HttpError(
         409,
-        "This delivery reference already exists. Open the existing receipt or use a different reference.",
+        "This invoice number already exists. Open the existing receipt or use a different invoice number.",
       );
     throw error;
   }
@@ -46,7 +52,7 @@ export async function listReceipts(search = "", status = "", page = 1) {
     ["OPEN", "FINALIZED", "DISCARDED"].includes(status) ? status : "",
   ];
   const where =
-    "WHERE (r.reference ILIKE $1 OR r.supplier ILIKE $1) AND (($2='DISCARDED' AND r.discarded_at IS NOT NULL) OR ($2<>'DISCARDED' AND r.discarded_at IS NULL AND ($2='' OR r.status=$2)))";
+    "WHERE (r.reference ILIKE $1 OR r.po_number ILIKE $1 OR r.supplier ILIKE $1) AND (($2='DISCARDED' AND r.discarded_at IS NOT NULL) OR ($2<>'DISCARDED' AND r.discarded_at IS NULL AND ($2='' OR r.status=$2)))";
   const count = await pool.query(
     `SELECT count(*)::int AS count FROM receipts r ${where}`,
     values,
@@ -342,6 +348,40 @@ export async function finalizeReceipt(
     await client.query(
       `INSERT INTO receipt_events(request_id,receipt_id,kind,source,delta,user_id,created_at) VALUES ($1,$2,'FINALIZE','MANUAL',0,$3,clock_timestamp())`,
       [randomUUID(), id, userId],
+    );
+  });
+}
+
+export async function saveClosingRemarks(
+  id: string,
+  userId: string,
+  remarks: unknown,
+  expected: unknown,
+) {
+  const value = text(remarks, "Remarks", 2000, false);
+  const previous = text(expected, "Previous remarks", 2000, false);
+  await transaction(async (client) => {
+    const receipt = await lockReceipt(client, id);
+    if (receipt.status !== "FINALIZED")
+      throw new HttpError(409, "Close the receipt before adding remarks.");
+    const current = (
+      await client.query("SELECT closing_remarks FROM receipts WHERE id=$1", [
+        id,
+      ])
+    ).rows[0].closing_remarks;
+    if (current === value) return;
+    if (current !== previous)
+      throw new HttpError(
+        409,
+        "Remarks changed by another user. Reload the receipt before editing.",
+      );
+    await client.query(
+      "UPDATE receipts SET closing_remarks=$2,updated_at=clock_timestamp() WHERE id=$1",
+      [id, value],
+    );
+    await client.query(
+      "INSERT INTO receipt_events(request_id,receipt_id,kind,source,delta,reason,user_id) VALUES ($1,$2,'REMARK','MANUAL',0,$3,$4)",
+      [randomUUID(), id, value || "Remarks cleared", userId],
     );
   });
 }

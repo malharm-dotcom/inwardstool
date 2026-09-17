@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import Camera from "@/components/Camera";
+import ClosingRemarks from "@/components/ClosingRemarks";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
 import Modal from "@/components/Modal";
@@ -256,7 +257,7 @@ export default function Receiving({
         <div>
           <div className="eyebrow">RECEIPT WORKSPACE</div>
           <h1>
-            {receipt.reference}
+            Invoice {receipt.reference}
             <span className={`badge ${open ? "open" : "finalized"}`}>
               <span />
               {open
@@ -266,6 +267,9 @@ export default function Receiving({
                   : "Finalized"}
             </span>
           </h1>
+          <p className="muted">
+            PO Number: {receipt.po_number || "Not recorded (existing receipt)"}
+          </p>
           <p className="muted">
             {receipt.supplier || "No supplier specified"}
             <span className="dot-separator">·</span>
@@ -727,6 +731,16 @@ export default function Receiving({
               <strong>{total.toLocaleString("en-IN")} units saved</strong>
             </div>
           </section>
+          {receipt.status === "FINALIZED" && (
+            <ClosingRemarks
+              receipt={receipt}
+              userId={user.id}
+              onSaved={(saved) => {
+                generation.current++;
+                setReceipt(saved);
+              }}
+            />
+          )}
           {receipt.notes && (
             <section className="receipt-notes">
               <strong>Delivery notes</strong>
@@ -805,11 +819,13 @@ export default function Receiving({
                     />
                     <div>
                       <strong>
-                        {event.kind === "FINALIZE"
-                          ? "Receipt finalized"
-                          : event.kind === "ADJUST"
-                            ? "Quantity corrected"
-                            : `${event.delta > 0 ? "+" : ""}${event.delta} unit scanned`}
+                        {event.kind === "REMARK"
+                          ? "Remarks updated"
+                          : event.kind === "FINALIZE"
+                            ? "Receipt finalized"
+                            : event.kind === "ADJUST"
+                              ? "Quantity corrected"
+                              : `${event.delta > 0 ? "+" : ""}${event.delta} unit scanned`}
                       </strong>
                       {event.sku && <span className="mono">{event.sku}</span>}
                       {event.scanned_code &&

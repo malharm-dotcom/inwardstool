@@ -1,5 +1,6 @@
 import { body, requireUser, route } from "@/lib/api";
 import { createReceipt, listReceipts } from "@/lib/receipts";
+import { text } from "@/lib/validation";
 
 export async function GET(request: Request) {
   return route(async () => {
@@ -20,7 +21,12 @@ export async function POST(request: Request) {
     const input = await body(request);
     return Response.json(
       await createReceipt(
-        input as { reference: string; supplier: string; notes: string },
+        {
+          reference: text(input.invoiceNumber, "Invoice number", 100),
+          poNumber: text(input.poNumber, "PO number", 100),
+          supplier: input.supplier as string,
+          notes: input.notes as string,
+        },
         user.id,
       ),
       { status: 201 },

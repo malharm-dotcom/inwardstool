@@ -7,6 +7,8 @@ export type User = {
 export type Receipt = {
   id: string;
   reference: string;
+  po_number: string;
+  closing_remarks: string;
   supplier: string;
   notes: string;
   status: "OPEN" | "FINALIZED" | "DISCARDED";
@@ -27,7 +29,7 @@ export type ReceiptEvent = {
   request_id: string;
   sku: string | null;
   shelf_code: string | null;
-  kind: "SCAN" | "ADJUST" | "FINALIZE";
+  kind: "SCAN" | "ADJUST" | "FINALIZE" | "REMARK";
   source: "SCANNER" | "CAMERA" | "MANUAL";
   delta: number;
   quantity_after: number | null;
